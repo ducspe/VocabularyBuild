@@ -22,7 +22,7 @@ public class DemoWordNet {
 	public static void main(String args [])
 	{
 		WordNet w = new WordNet();
-		w.searchWord("book");
+		w.searchWord("car");
 		
 	}	
 }
