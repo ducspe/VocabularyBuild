@@ -66,6 +66,8 @@ class MyWordNet {
 		}
 	}
 
+
+	
 	public void searchWord(String inkey) {
 		
 		HashMap<String, List<String>> hashMap = new HashMap<String, List<String>>(); // create a "key->value" map where the "value" is a growing list of synonyms of the "key" word
@@ -99,9 +101,13 @@ class MyWordNet {
 
 			for (String mapKey : hashMap.keySet()) {
 				HashSet<String> set = new HashSet<String>(hashMap.get(mapKey)); // use Set data structure to get rid of duplicates
-				String line = set.toString();
-				bw.write(line);
-				bw.newLine();
+				String[] line = set.toString().replaceAll("\\[|\\]", "").replaceAll("_"," ").split(",");
+				for (String word : line) {
+					if (word.isEmpty()) continue;
+					bw.write(word);
+					bw.newLine();
+				}
+				
 			}
 			bw.close();
 		} catch (IOException e) {
