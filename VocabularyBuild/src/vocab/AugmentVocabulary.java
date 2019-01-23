@@ -10,21 +10,24 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
 import edu.mit.jwi.item.ISynset;
+import edu.mit.jwi.item.ISynsetID;
 import edu.mit.jwi.item.IWord;
 import edu.mit.jwi.item.IWordID;
 import edu.mit.jwi.item.POS;
+import edu.mit.jwi.item.Pointer;
 import edu.mit.jwi.morph.WordnetStemmer;
 
 
 // The program takes all words from file "inputwords" and creates a file "outputdictionary" with synonyms. The order is not preserved between the files because a HashMap and Set datastructures
-// are used to do the computations... Input file has format: one word per line. Output file has format [list of synonyms] per line for a given word. 
-// An extra method can be added to take the output file and convert it to a desired format...
+// are used to do the computations... Input file has format: one word per line. Output file has same format.
+// An extra method can be added to take the output file and convert it to a different desired format...
 public class AugmentVocabulary {
 
 	public static void main(String args[]) {
@@ -34,6 +37,10 @@ public class AugmentVocabulary {
 		try {
 			FileReader fr = new FileReader("inputwords"); // place the words in this file (one word per line) for which you want to find synonyms (or other related words)
 			BufferedReader bufferedReader = new BufferedReader(fr);
+			
+			// To empty the output file do the following trick: open and immediately close the FileWriter
+			FileWriter  fw = new FileWriter("outputdictionary");
+			fw.close();
 
 			while ((line = bufferedReader.readLine()) != null) {
 				MyWordNet w = new MyWordNet();
@@ -66,7 +73,6 @@ class MyWordNet {
 		}
 	}
 
-
 	
 	public void searchWord(String inkey) {
 		
@@ -79,7 +85,42 @@ class MyWordNet {
 						for (IWordID wordID : idxWord.getWordIDs()) {
 		
 							IWord word = dictionary.getWord(wordID);
-							ISynset wordSynset = word.getSynset(); // get synonyms
+							ISynset wordSynset = word.getSynset(); // get synonymous sets of words
+							
+							// Find Hypernyms and add them to the hash map of related words:
+							List<ISynsetID> hypernyms = dictionary.getSynset(wordSynset.getID()).getRelatedSynsets(Pointer.HYPERNYM);
+							List<IWord> words;
+						    for (ISynsetID sid : hypernyms) {
+						      words = dictionary.getSynset(sid).getWords();
+						      for (Iterator<IWord> i = words.iterator(); i.hasNext();) {
+						        String result = i.next().getLemma();
+						        if (hashMap.containsKey(key)) { // if "key" is already in the map we want to grow the value list and not overwrite it...
+									hashMap.get(key).add(result);
+								} else { // if "key" is not in the map than create the "value" list and make the "key" point to it
+									List<String> list = new ArrayList<String>();
+									hashMap.put(key, list);
+								}
+						      }
+						    }
+						    
+						    // Find Hyponyms and add them to the hash map of related words:
+						    List<ISynsetID> hyponyms = dictionary.getSynset(wordSynset.getID()).getRelatedSynsets(Pointer.HYPONYM);
+						
+						    for (ISynsetID sid : hyponyms) {
+						      words = dictionary.getSynset(sid).getWords();
+						      for (Iterator<IWord> i = words.iterator(); i.hasNext();) {
+						        String result = i.next().getLemma();
+						        if (hashMap.containsKey(key)) { // if "key" is already in the map we want to grow the value list and not overwrite it...
+									hashMap.get(key).add(result);
+								} else { // if "key" is not in the map than create the "value" list and make the "key" point to it
+									List<String> list = new ArrayList<String>();
+									hashMap.put(key, list);
+								}
+						        //System.out.println(result);
+						      }
+						    }
+							
+						    // Add the synonyms to the hash map of related words:
 							for (IWord synonym : wordSynset.getWords()) {
 								if (hashMap.containsKey(key)) { // if "key" is already in the map we want to grow the value list and not overwrite it...
 									hashMap.get(key).add(synonym.getLemma());
@@ -93,12 +134,11 @@ class MyWordNet {
 				}
 			}
 		}
-
+		
 		try {
-			// delete the output file contents each time you run the application
-			FileWriter fw = new FileWriter("outputdictionary", true); // "true" means append mode is enabled
+			FileWriter  fw = new FileWriter("outputdictionary", true); // "true" means append mode is enabled
 			BufferedWriter bw = new BufferedWriter(fw);
-
+	
 			for (String mapKey : hashMap.keySet()) {
 				HashSet<String> set = new HashSet<String>(hashMap.get(mapKey)); // use Set data structure to get rid of duplicates
 				String[] line = set.toString().replaceAll("\\[|\\]", "").replaceAll("_"," ").split(",");
@@ -107,11 +147,11 @@ class MyWordNet {
 					bw.write(word);
 					bw.newLine();
 				}
-				
 			}
 			bw.close();
-		} catch (IOException e) {
+		} catch(IOException e) {
 			e.printStackTrace();
 		}
+		
 	}
 }
