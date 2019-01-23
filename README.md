@@ -1,5 +1,3 @@
 # VocabularyBuild
 
-### DemoWordNet.java spits a list of synonyms depending on the different meanings of the word
-
-### We can use the list of topics from the LIWC csv file and build a large vocabulary for those topics consisting of synonyms or maybe even hyponyms/hypernyms etc.
+### The program takes all words from file "inputwords" and creates a file "outputdictionary" with synonyms. The order is not preserved between the files because a HashMap and Set datastructures are used to do the computations... Input file has format: one word per line. Output file has format [list of synonyms] per line for a given word. An extra method can be added to take the output file and convert it to a desired format...
